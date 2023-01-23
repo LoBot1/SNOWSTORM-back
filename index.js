@@ -32,6 +32,20 @@ app.get("/pokemonCatch/list", function (req, res) {
       
   });
 
+  // users
+app.post("/user/list",jsonParser, function (req, res) {
+    listBDD("user", body(req), res);
+  });
+  app.post('/user/insert', jsonParser, (req, res) => {
+    insertBDD("user", listBDD("produit", body(req, res), res), res);
+  });
+  app.delete('/user/delete', jsonParser, (req, res) => {
+    deleteBDD("user", body(req), res);
+  });
+  app.delete('/user/update', jsonParser, (req, res) => {
+    deleteBDD("user", body(req), res);
+  });
+
   app.listen(port, function () {
     console.log(`App listening on port ${port}!`);
   });
