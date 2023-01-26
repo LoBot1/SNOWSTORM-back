@@ -6,10 +6,18 @@ const jsonParser = bodyParser.json();
 const { ObjectId, ObjectID } = require("mongodb");
 const app = express();
 app.use(cors())
+app.use(cors())
 const port = 4444;
 
 
+
+
+
 dbo.connectToServer();
+
+
+
+// ENVOI DU FORMULAIRE D'INSCRIPTION
 
 app.post('/user/post', jsonParser, (req, res) => {
     const body = req.body;
@@ -20,15 +28,28 @@ app.post('/user/post', jsonParser, (req, res) => {
     dbConnect.collection("user").insertOne({firstname:body.firstname,name:body.name,email:body.email,adress:body.adress,password:body.password});
 }); 
 
-app.post('/support/post', jsonParser, (req, res) => {
-  const body = req.body;
+// VERIFIER AU LOGIN SI LE USER EST VALIDE PAR RAPPORT AU INFOS SEND ET SET SON TOKEN
+
+app.get('/user/loger', jsonParser, (req, res) => {
+  mail = req.query.email
+  pass = req.query.password
+  console.log(pass,mail,req.query.non)
   const dbConnect = dbo.getDb();
-  if (!(body.object && body.email && body.img && body.name && body.text)) {
-    res.status(400).send("Tout doit être complété");
-  }
-  dbConnect.collection("support").insertOne({email:body.email,object:body.object,text:body.text,img:body.img});
-  
-}); 
+  dbConnect.collection("user").findOne({email:mail,password:pass}).then(function (result,err) {
+    let error = false
+    if (!result) { 
+      error = true
+      res.json(error)
+    }
+    else{
+      user = [result._id,result.firstname,result.name,result.email]
+      res.json(user)
+    }
+      
+  });
+});
+
+// GET ALL USERS
 
 app.get('/user/getAll', jsonParser, (req, res) => {
   const body = req.body;
@@ -37,6 +58,22 @@ app.get('/user/getAll', jsonParser, (req, res) => {
     res.json(result);
   });
 }); 
+
+
+//SUPPORT-------------------------SUPPORT-------------SUPPORT-------------SUPPORT-----------------------------------------------------
+
+// ENVOIE DU FORMULAIRE DE SUPPORT 
+
+app.post('/support/post', jsonParser, (req, res) => {
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  if (!(body.object && body.email && body.img && body.name && body.text)) {
+    res.status(400).send("Tout doit être complété");
+  }
+  dbConnect.collection("support").insertOne({email:body.email,object:body.object,text:body.text,img:body.img});
+}); 
+
+// GET ALL TCIKET SUPPORT
 
 app.get('/support/getAll', jsonParser, (req, res) => {
   const body = req.body;
@@ -47,24 +84,7 @@ app.get('/support/getAll', jsonParser, (req, res) => {
   });
 }); 
 
-app.get('/user/loger', jsonParser, (req, res) => {
-  mail = req.query.email
-  pass = req.query.password
-  console.log(pass,mail,req.query.non)
-  const dbConnect = dbo.getDb();
-  dbConnect.collection("user").findOne({email:mail,password:pass}).then(function (result,err) {
-    console.log(result)
-    const token = jwt.sign(
-      { user_id: result._id},
-      process.env.TOKEN_KEY,
-      {
-        expiresIn: "2h",
-      }
-    );
-    user.token = token;
-    res.json(result);
-  });
-});
+
 
 //user-------------------------user-------------user-------------user-----------------------------------------------------
 app.get("/user/list", function (req, res) {
