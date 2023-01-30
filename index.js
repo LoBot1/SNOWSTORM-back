@@ -13,27 +13,90 @@ dbo.connectToServer();
 
 
 
-// const stripe = require('stripe')('sk_test_51MUBAvIG0wu5IZ8aFhWYMB94LJDMBXqIfMfI6lyaIitg1H6Mp2ERMSvtnyQIX5iI0Nx6xuw3z8HA2dUoidm2l2L800EuoasoOE');
-// app.use(express.static('public'));
 
-// const YOUR_DOMAIN = 'http://localhost:4444';
 
-// app.post('/create-checkout-session', async (req, res) => {
-//   const session = await stripe.checkout.sessions.create({
-//     line_items: [
-//       {
-//         price: '{{price_1MUUUsIG0wu5IZ8awvqbSn5K}}',
-//         quantity: 1,
-//       },
-//     ],
-//     mode: 'payment',
-//     success_url: "http://localhost:3000/success", 
-//     cancel_url: "http://localhost:3000/cancel", 
-//   });
 
-//   res.redirect(303, session.url);
-// });
 
+const stripe = require('stripe')('sk_test_51MUBAvIG0wu5IZ8aFhWYMB94LJDMBXqIfMfI6lyaIitg1H6Mp2ERMSvtnyQIX5iI0Nx6xuw3z8HA2dUoidm2l2L800EuoasoOE');
+app.use(express.static('public'));
+
+
+
+
+
+app.post('/like/update-insert', jsonParser, (req, res) => {
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  dbConnect.collection("like").findOne({id_product:body.id_product}).then(function (result, err) {
+    if (err) {
+      console.log(err);
+      res.send(err.message);
+    }
+    else if (!result) {
+      dbConnect.collection("like").insertOne({id_product:body.id_product,like:1})
+    } else {
+      dbConnect.collection("like").updateOne({id_product:body.id_product}, {$set:{id_product:body.id_product,like:(result.like+1)}})
+    }
+  });
+}); 
+
+
+
+// GET ALL TICKET SUPPORT
+
+app.get('/like/getAll', jsonParser, (req, res) => {
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  dbConnect.collection("like").find({}).toArray(function (err, result) {
+    console.log(result)
+    res.json(result);
+  });
+}); 
+
+
+
+
+
+
+
+// CREER LE CHOIX DU PRODUIT A L'AVANCE ET LES PARAMETRES DU PAIEMENT
+
+const YOUR_DOMAIN = 'http://localhost:4444';
+
+app.post('/create-checkout-session', async (req, res) => {
+  const session = await stripe.checkout.sessions.create({
+    line_items: [
+      {
+        price: '{{price_1MUUUsIG0wu5IZ8awvqbSn5K}}',
+        quantity: 1,
+      },
+    ],
+    mode: 'payment',
+    success_url: "http://localhost:3000/success", 
+    cancel_url: "http://localhost:3000/cancel", 
+  });
+  res.redirect(303, session.url);
+});
+
+
+// CREER LE PREPAIEMENT VALIDE PAR LE SUCCESS
+
+
+app.post("/create-payment-intent", async (req, res) => {
+
+  // Create a PaymentIntent with the order amount and currency
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: 1400,
+    currency: "eur",
+    automatic_payment_methods: {
+      enabled: true,
+    },
+  });
+
+  res.send({
+    clientSecret: paymentIntent.client_secret,
+  });
+});
 
 
 
@@ -103,7 +166,7 @@ app.post('/product/insert', jsonParser, (req, res) => {
 app.post('/product/update',jsonParser,(req, res) => {
   const dbConnect = dbo.getDb();
   const body = req.body;
-  dbConnect.collection('produit').updateOne({_id: ObjectId(body._id)}, {$set:{name: req.body.name,type1:req.body.type1,type2:req.body.type2,desc:req.body.desc,num:req.body.num}}, function(err, result) {
+  dbConnect.collection('produit').updateOne({_id:ObjectId(body._id)}, {$set:{name:body.name,img:body.img,price:body.price}}, function(err, result) {
     if (err) {
       console.log(err);
       res.send(err.message);
@@ -146,20 +209,34 @@ app.post('/user/post', jsonParser, (req, res) => {
 
 // VERIFIER AU LOGIN SI LE USER EST VALIDE PAR RAPPORT AU INFOS SEND ET SET SON TOKEN
 
+function comparePassword(plaintextPassword, hash) {
+  bcyrpt.compare(plaintextPassword, hash)
+  .then(result => {
+    return result
+  })
+  .catch(err => {
+    console.log(err)
+  })
+  }
+
 app.get('/user/loger', jsonParser, (req, res) => {
-  console.log(pass,mail,req.query.non)
+  password = comparePassword(plaintextPassword, hash)
   const dbConnect = dbo.getDb();
-  dbConnect.collection("user").findOne({email:req.query.email,password:req.query.password}).then(function (result,err) {
+  dbConnect.collection("user").findOne({email:req.query.email}).then(function (result,err) {
     let error = false
     if (!result) { 
       error = true
       res.json(error)
     }
     else{
-      user = [result._id,result.firstname,result.name,result.email]
-      res.json(user)
-    }
+      if (comparePassword(req.query.password, result.password)) {
+        user = [result._id,result.firstname,result.name,result.email]
+        res.json(user)
+      }
       
+      error = true
+      res.json(error)
+    }
   });
 });
 
