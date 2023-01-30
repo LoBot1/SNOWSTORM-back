@@ -8,34 +8,148 @@ const app = express();
 app.use(cors())
 app.use(cors())
 const port = 4444;
-
-
-
-
-
 dbo.connectToServer();
 
 
 
+
+// const stripe = require('stripe')('sk_test_51MUBAvIG0wu5IZ8aFhWYMB94LJDMBXqIfMfI6lyaIitg1H6Mp2ERMSvtnyQIX5iI0Nx6xuw3z8HA2dUoidm2l2L800EuoasoOE');
+// app.use(express.static('public'));
+
+// const YOUR_DOMAIN = 'http://localhost:4444';
+
+// app.post('/create-checkout-session', async (req, res) => {
+//   const session = await stripe.checkout.sessions.create({
+//     line_items: [
+//       {
+//         price: '{{price_1MUUUsIG0wu5IZ8awvqbSn5K}}',
+//         quantity: 1,
+//       },
+//     ],
+//     mode: 'payment',
+//     success_url: "http://localhost:3000/success", 
+//     cancel_url: "http://localhost:3000/cancel", 
+//   });
+
+//   res.redirect(303, session.url);
+// });
+
+
+
+
+//SUPPORT-------------------------SUPPORT-------------SUPPORT-------------SUPPORT-----------------------------------------------------
+
+// ENVOIE DU FORMULAIRE DE SUPPORT 
+
+app.post('/support/post', jsonParser, (req, res) => {
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  if (!(body.object && body.email && body.img && body.name && body.text)) {
+    res.status(400).send("Tout doit être complété");
+  }
+  dbConnect.collection("support").insertOne({email:body.email,object:body.object,text:body.text,img:body.img});
+}); 
+
+// GET ALL TICKET SUPPORT
+
+app.get('/support/getAll', jsonParser, (req, res) => {
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  dbConnect.collection("support").find({}).toArray(function (err, result) {
+    console.log(result)
+    res.json(result);
+  });
+}); 
+
+
+
+
+
+
+
+// CRUD PRODUCT
+
+app.get('/product/getAll', jsonParser, (req, res) => {
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  dbConnect.collection("produit").find({}).toArray(function (err, result) {
+    if (err) {
+      console.log(err);
+      res.send(err.message);
+    } else {
+      console.log(result)
+      res.json(result);
+    }
+  });
+}); 
+
+
+app.post('/product/insert', jsonParser, (req, res) => {
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  dbConnect.collection("produit").insertOne({name:body.name,price:body.price,description:body.description,img:body.img}).then(function (result, err){
+    if (err) {
+        console.log(err);
+        res.send(err.message);
+    } else {
+        console.log(result);
+        res.json(result);
+    }
+  });
+});
+
+// UPDATE PRODUIT
+
+app.post('/product/update',jsonParser,(req, res) => {
+  const dbConnect = dbo.getDb();
+  const body = req.body;
+  dbConnect.collection('produit').updateOne({_id: ObjectId(body._id)}, {$set:{name: req.body.name,type1:req.body.type1,type2:req.body.type2,desc:req.body.desc,num:req.body.num}}, function(err, result) {
+    if (err) {
+      console.log(err);
+      res.send(err.message);
+    } else {
+      console.log(result);
+      res.json(result);
+    }
+  }) 
+});
+
+// DELETE PRODUIT
+
+app.delete('/product/delete', jsonParser, (req, res) => {
+  const dbConnect = dbo.getDb();
+  const body = req.body;
+  dbConnect.collection("produit").deleteOne({_id: ObjectId(body._id)}).then(function (result, err){
+    if (err) {
+      console.log(err);
+      res.send(err.message);
+    } else {
+      console.log(result);
+      res.json(result);
+    }
+  });
+});
+
+
+// CRUD USER
+
 // ENVOI DU FORMULAIRE D'INSCRIPTION
 
 app.post('/user/post', jsonParser, (req, res) => {
-    const body = req.body;
-    const dbConnect = dbo.getDb();
-    if (!(body.email && body.password && body.firstname && body.name && body.adress)) {
-      res.status(400).send("Tout doit être complété");
-    }
-    dbConnect.collection("user").insertOne({firstname:body.firstname,name:body.name,email:body.email,adress:body.adress,password:body.password});
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  if (!(body.email && body.password && body.firstname && body.name && body.adress)) {
+    res.status(400).send("Tout doit être complété");
+  }
+  dbConnect.collection("user").insertOne({firstname:body.firstname,name:body.name,email:body.email,adress:body.adress,password:body.password});
 }); 
 
 // VERIFIER AU LOGIN SI LE USER EST VALIDE PAR RAPPORT AU INFOS SEND ET SET SON TOKEN
 
 app.get('/user/loger', jsonParser, (req, res) => {
-  mail = req.query.email
-  pass = req.query.password
   console.log(pass,mail,req.query.non)
   const dbConnect = dbo.getDb();
-  dbConnect.collection("user").findOne({email:mail,password:pass}).then(function (result,err) {
+  dbConnect.collection("user").findOne({email:req.query.email,password:req.query.password}).then(function (result,err) {
     let error = false
     if (!result) { 
       error = true
@@ -55,121 +169,73 @@ app.get('/user/getAll', jsonParser, (req, res) => {
   const body = req.body;
   const dbConnect = dbo.getDb();
   dbConnect.collection("user").find({}).toArray(function (err, result) {
-    res.json(result);
+    if (err) {
+      console.log(err);
+      res.send(err.message);
+    } else {
+      console.log(result);
+      res.json(result);
+    }
   });
 }); 
 
 
-//SUPPORT-------------------------SUPPORT-------------SUPPORT-------------SUPPORT-----------------------------------------------------
+// UPDATE USER
 
-// ENVOIE DU FORMULAIRE DE SUPPORT 
 
-app.post('/support/post', jsonParser, (req, res) => {
-  const body = req.body;
+app.post('/product/update',jsonParser,(req, res) => {
   const dbConnect = dbo.getDb();
-  if (!(body.object && body.email && body.img && body.name && body.text)) {
-    res.status(400).send("Tout doit être complété");
-  }
-  dbConnect.collection("support").insertOne({email:body.email,object:body.object,text:body.text,img:body.img});
-}); 
-
-// GET ALL TCIKET SUPPORT
-
-app.get('/support/getAll', jsonParser, (req, res) => {
   const body = req.body;
+  dbConnect.collection('user').updateOne({_id: ObjectId(req.body._id)}, {$set:{fisrtname:body.firstname,name:body.name,adress:body.adress,email:body.email}}, function(err, result) {
+    if (err) {
+      console.log(err);
+      res.send(err.message);
+    } else {
+      console.log(result);
+      res.json(result);
+    }
+  }) 
+});
+
+// DELETE USER
+
+app.delete('/user/delete', jsonParser, (req, res) => {
   const dbConnect = dbo.getDb();
-  dbConnect.collection("support").find({}).toArray(function (err, result) {
-    console.log(result)
-    res.json(result);
+  const body = req.body;
+  dbConnect.collection("user").deleteOne({}).then(function (result, err){
+    if (err) {
+      console.log(err);
+      res.send(err.message);
+    } else {
+      console.log(result);
+      res.json(result);
+    }
   });
+});
+
+
+
+
+// ACHAT ------------------------------------ ACHAT PAR PRODUIT
+
+
+app.post('/user/post', jsonParser, (req, res) => {
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  dbConnect.collection("user").insertOne(body);
 }); 
 
 
 
-//user-------------------------user-------------user-------------user-----------------------------------------------------
-app.get("/user/list", function (req, res) {
-  //on se connecte à la DB MongoDB
-  const dbConnect = dbo.getDb();
-  //premier test permettant de récupérer mes pokemons !
-  dbConnect
-    .collection("user")
-    .find({}) // permet de filtrer les résultats
-    /*.limit(50) // pourrait permettre de limiter le nombre de résultats */
-    .toArray(function (err, result) {
-      if (err) {
-        res.status(400).send("Error fetching pokemons!");
-      } else {
-        res.json(result);
-      }
-    });
-    /*
-    Bref lisez la doc, 
-    il y a plein de manières de faire ce qu'on veut :) 
-    */
-    
-});
 
-//user-------------------------user-------------user-------------user-----------------------------------------------------
 
-//PRODUIT-------------------------PRODUIT-------------PRODUIT-------------PRODUIT-----------------------------------------------------
 
-//RECUPERER-TOUT-LES-PRODUIT
 
-app.get("/Produit/list", function (req, res) {
-  //on se connecte à la DB MongoDB
-  const dbConnect = dbo.getDb();
-  //premier test permettant de récupérer mes pokemons !
-  dbConnect
-    .collection("Produit")
-    .find({}) // permet de filtrer les résultats
-    /*.limit(50) // pourrait permettre de limiter le nombre de résultats */
-    .toArray(function (err, result) {
-      if (err) {
-        res.status(400).send("Error fetching pokemons!");
-      } else {
-        res.json(result);
-      }
-    });
-    /*
-    Bref lisez la doc, 
-    il y a plein de manières de faire ce qu'on veut :) 
-    */
-    
-});
-//INSERER-UN-NOUVEAU-PRODUIT
 
-app.post('/Produit/insert', jsonParser, (req, res) => {
-  const body = req.body;
-  console.log('Got body:', body);
-  const dbConnect = dbo.getDb();
-  dbConnect
-    .collection("Produit")
-    .insertOne({...body})
-    .then(function (result, error){
-      if(error) {
-        res.json({error : error.message})
-      }
-      res.json({result})
-    });
-});
 
-app.post('/Produit/update',jsonParser,(req, res) => {
-  const dbConnect = dbo.getDb(); 
-  dbConnect.collection('Produit').updateMany(
-    { _id: ObjectId(req.body._id) }, 
-    { $set: {name: req.body.name,type1:req.body.type1,type2:req.body.type2,desc:req.body.desc,num:req.body.num}
-  }, function(err, result) {
-       if (err) {
-        console.log(err);
-        res.send(err.message);
-      } else {
-        console.log("Post Updated successfully");
-        res.json(result);
-    } 
- });
-});
 
-//PRODUIT-------------------------PRODUIT-------------PRODUIT-------------PRODUIT-----------------------------------------------------
+
+
 app.listen(port, function () {
   console.log(`App listening on port ${port}!`);
 });
