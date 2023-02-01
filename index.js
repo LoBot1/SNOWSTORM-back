@@ -187,10 +187,10 @@ app.get('/product/getAll', jsonParser, (req, res) => {
 app.post('/product/insert', jsonParser, (req, res) => {
   const body = req.body;
   const dbConnect = dbo.getDb();
-  if (!(body.name || body.price || body.description || body.img)) {
+  if (!(body.name || body.price || body.description || body.img || body.stock)) {
     res.send("Tout doit être complété");
   }
-  dbConnect.collection("produit").insertOne({name:body.name,price:body.price,description:body.description,img:body.img}).then(function (result, err){
+  dbConnect.collection("produit").insertOne({name:body.name,price:body.price,description:body.description,img:body.img,stock:body.stock}).then(function (result, err){
     if (err) {
         console.log(err);
         res.send(err.message);
