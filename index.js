@@ -112,8 +112,8 @@ app.post("/create-payment-intent", async (req, res) => {
 app.post('/support/post', jsonParser, (req, res) => {
   const body = req.body;
   const dbConnect = dbo.getDb();
-  if (!(body.object && body.email && body.img && body.name && body.text)) {
-    res.status(400).send("Tout doit être complété");
+  if (!(body.object || body.email || body.img || body.text)) {
+    res.send("Tout doit être complété");
   }
   dbConnect.collection("support").insertOne({email:body.email,object:body.object,text:body.text,img:body.img});
 }); 
@@ -155,6 +155,9 @@ app.get('/product/getAll', jsonParser, (req, res) => {
 app.post('/product/insert', jsonParser, (req, res) => {
   const body = req.body;
   const dbConnect = dbo.getDb();
+  if (!(body.name || body.price || body.description || body.img)) {
+    res.send("Tout doit être complété");
+  }
   dbConnect.collection("produit").insertOne({name:body.name,price:body.price,description:body.description,img:body.img}).then(function (result, err){
     if (err) {
         console.log(err);
@@ -171,6 +174,9 @@ app.post('/product/insert', jsonParser, (req, res) => {
 app.post('/product/update',jsonParser,(req, res) => {
   const dbConnect = dbo.getDb();
   const body = req.body;
+  if (!(body._id || body.name || body.img || body.price)) {
+    res.send("Tout doit être complété");
+  }
   dbConnect.collection('produit').updateOne({_id:ObjectId(body._id)}, {$set:{name:body.name,img:body.img,price:body.price}}, function(err, result) {
     if (err) {
       console.log(err);
@@ -187,6 +193,9 @@ app.post('/product/update',jsonParser,(req, res) => {
 app.delete('/product/delete', jsonParser, (req, res) => {
   const dbConnect = dbo.getDb();
   const body = req.body;
+  if (!(body._id)) {
+    res.send("Tout doit être complété");
+  }
   dbConnect.collection("produit").deleteOne({_id: ObjectId(body._id)}).then(function (result, err){
     if (err) {
       console.log(err);
@@ -231,6 +240,9 @@ function comparePassword(plaintextPassword, hash) {
 
 app.get('/user/loger', jsonParser, (req, res) => {
   const dbConnect = dbo.getDb();
+  if (!(req.query.email || req.query.password)) {
+    res.send("Tout doit être complété");
+  }
   dbConnect.collection("user").findOne({email:req.query.email}).then(function (result,err) {
     console.log(result)
     let error = false
@@ -269,10 +281,13 @@ app.get('/user/getAll', jsonParser, (req, res) => {
 // UPDATE USER
 
 
-app.post('/product/update',jsonParser,(req, res) => {
+app.post('/user/update',jsonParser,(req, res) => {
   const dbConnect = dbo.getDb();
   const body = req.body;
-  dbConnect.collection('user').updateOne({_id: ObjectId(req.body._id)}, {$set:{fisrtname:body.firstname,name:body.name,adress:body.adress,email:body.email}}, function(err, result) {
+  if (!(body._id || body.firstname || body.name || body.adress || body.email)) {
+    res.send("Tout doit être complété");
+  }
+  dbConnect.collection('user').updateOne({_id: ObjectId(body._id)}, {$set:{fisrtname:body.firstname,name:body.name,adress:body.adress,email:body.email}}, function(err, result) {
     if (err) {
       console.log(err);
       res.send(err.message);
@@ -281,6 +296,36 @@ app.post('/product/update',jsonParser,(req, res) => {
       res.json(result);
     }
   }) 
+});
+
+app.post('/password/update',jsonParser,(req, res) => {
+  const dbConnect = dbo.getDb();
+  const body = req.query;
+  if (!(body.lastpassword || body.password || body._id || body.repeatpassword)) {
+    res.send("Tout doit être complété");
+  }
+  if ((body.password == body.repeatpassword)) {
+    res.send("Les 2 nouveau mot de passe doivent être identiques");
+  }
+  dbConnect.collection("user").findOne({email:body.email}).then(function (result, err) {
+    if (err) {
+      res.send("Le mot de passe n'est pas le bon");
+    }
+    else {
+      if (comparePassword(body.password, result.password)) {
+        const password = hashPassword(body.password)
+        dbConnect.collection('user').updateOne({_id: ObjectId(result._id)}, {$set:{password:password}}, function(err, result) {
+          if (err) {
+            console.log(err);
+            res.send(err.message);
+          } else {
+            console.log(result);
+            res.json(result);
+          }
+        }) 
+      }
+    }
+  })
 });
 
 // DELETE USER
@@ -303,18 +348,6 @@ app.delete('/user/delete', jsonParser, (req, res) => {
 
 
 // ACHAT ------------------------------------ ACHAT PAR PRODUIT
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
