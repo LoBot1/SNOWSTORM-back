@@ -27,6 +27,23 @@ app.use(express.static('public'));
 
 
 
+app.post('/sell-number/update-insert', jsonParser, (req, res) => {
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  dbConnect.collection("sellnumber").findOne({id_product:body.id_product}).then(function (result, err) {
+    if (err) {
+      console.log(err);
+      res.send(err.message);
+    }
+    else if (!result) {
+      dbConnect.collection("sellnumber").insertOne({id_product:body.id_product,sellnumber:1})
+    } else {
+      dbConnect.collection("sellnumber").updateOne({id_product:body.id_product}, {$set:{id_product:body.id_product,sellnumber:(result.sellnumber+body.quantity)}})
+    }
+  });
+}); 
+
+
 
 
 app.post('/like/update-insert', jsonParser, (req, res) => {
@@ -45,6 +62,21 @@ app.post('/like/update-insert', jsonParser, (req, res) => {
   });
 }); 
 
+
+app.post('/calculnumber', jsonParser, (req, res) => {
+  const body = req.body;
+  const dbConnect = dbo.getDb();
+  if (body.choice == "vendu") {
+    dbConnect.collection("sellnumber").find({}).sort({sellnumber : -1}).toArray(function (err,result) {
+      console.log(result)
+    })
+  }
+  if (body.choice == "like") {
+    dbConnect.collection("like").find({}).sort({sellnumber : -1}).toArray(function (err,result) {
+      console.log(result)
+    })
+  }
+})
 
 
 // GET ALL TICKET SUPPORT
